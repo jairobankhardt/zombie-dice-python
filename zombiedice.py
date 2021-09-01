@@ -7,21 +7,97 @@
 
 import random
 from time import sleep
+from collections import namedtuple
 
+
+#  ***  DEFINIÇÕES E INCREMENTOS  ***  #
 
 def inicializa_copo():
     """
     Inicializa o copo com todos os 13 dados.
     São 6 dados verdes, 4 amarelos e 3 vermelhos.
 
-    :return: lista das cores dos dados
+    :return: lista completa dos dados com suas cores do copo
     """
-    return ['\033[1;32mverde\033[0;0m', '\033[1;32mverde\033[0;0m', '\033[1;32mverde\033[0;0m',
-            '\033[1;32mverde\033[0;0m', '\033[1;32mverde\033[0;0m', '\033[1;32mverde\033[0;0m',
-            '\033[1;33mamarelo\033[0;0m', '\033[1;33mamarelo\033[0;0m',
-            '\033[1;33mamarelo\033[0;0m', '\033[1;33mamarelo\033[0;0m',
-            '\033[1;31mvermelho\033[0;0m', '\033[1;31mvermelho\033[0;0m', '\033[1;31mvermelho\033[0;0m']
+    return ['verde', 'verde', 'verde', 'verde', 'verde', 'verde',
+            'amarelo', 'amarelo', 'amarelo', 'amarelo',
+            'vermelho', 'vermelho', 'vermelho']
 
+
+def pega_cor(cor_fonte, cor_fundo=''):
+    """
+    Define cores para colorir os textos.
+
+    :param cor_fonte: cor da fonte
+    :param cor_fundo: cor de fundo
+    :return: o código das cores escolhidas
+    """
+    fg = {'branco': 30, 'vermelho': 31, 'verde': 32, 'amarelo': 33,
+          'azul': 34, 'magenta': 35, 'cyan': 36, 'cinza': 37, 'cinza escuro': 90,
+          'vermelho claro': 91, 'verde claro': 92, 'amarelo claro': 93,
+          'azul claro': 94, 'magenta claro': 95, 'cyan claro': 96}
+    bg = {'branco': 40, 'vermelho': 41, 'verde': 42, 'amarelo': 43,
+          'azul': 44, 'magenta': 45, 'cyan': 46, 'cinza': 47, 'cinza escuro': 100,
+          'vermelho claro': 101, 'verde claro': 102, 'amarelo claro': 103,
+          'azul claro': 104, 'magenta claro': 105, 'cyan claro': 106}
+    fundo = ''
+    if cor_fundo:
+        fundo = f';{bg[cor_fundo]}'
+
+    return '\033[1;'+str(fg[cor_fonte])+fundo+'m'
+
+
+def finaliza_cor():
+    """
+    Reseta as cores do texto.
+
+    :return: código para resetar o texto
+    """
+    return '\033[0;0m'
+
+
+def incrementa_contadores(face_do_dado, lista_contadores):
+    """
+    Incrementa os contadores de cérebro, passo e tiro da rodada.
+
+    :param face_do_dado: a face do dado
+    :param lista_contadores: a lista dos contadores
+    :return: a lista de contadores atualizada
+    """
+    if face_do_dado == 'cérebro':
+        lista_contadores['contC'] += 1
+    elif face_do_dado == 'tiro':
+        lista_contadores['contT'] += 1
+    else:
+        lista_contadores['contP'] += 1
+
+
+def define_jogadores():
+    """
+    Inicializa a lista de jogadores.
+
+    :return: lista de listas com o nome dos jagadores e 0 para seus cérebros
+    """
+    qtd = 0
+    jog = list()  # lista que irá conter o nome dos jogadores e o número de cérebros
+    print('Primeiro vamos conhecer os jogadores.\n')
+    while True:
+        qtd += 1
+        jog.append([input(f'Qual o nome do Jogador número {qtd}? '), 0])
+        if qtd >= 2:
+            if not quer_continuar('Alguém mais vai jogar?'):
+                break
+    print('\n')
+    return jog
+
+
+def dormir(segundos, pontos):
+    for _ in range(pontos):
+        print('. ', end='')
+        sleep(segundos)
+
+
+#  ***  MANIPULAÇÃO DOS DADOS  ***  #
 
 def sorteia_dado_copo(dados_no_copo):
     """
@@ -30,29 +106,31 @@ def sorteia_dado_copo(dados_no_copo):
     :param dados_no_copo: lista contendo os dados no copo
     :return: dado sorteado
     """
-    return copo[random.randrange(len(dados_no_copo))]
+    return dados_no_copo[random.randrange(len(dados_no_copo))]
 
 
-def retira_dado_sorteado_do_copo(d_sorteado, dados_no_copo):
+def retira_dado_sorteado_do_copo(cor_dado, dados_no_copo):
     """
     Remove um dado do copo.
 
-    :param d_sorteado: cor do dado
+    :param cor_dado: cor do dado
     :param dados_no_copo: lista de dados do copo
     :return: copo atualizado com menos um dado
     """
-    dados_no_copo.remove(d_sorteado)
+    dados_no_copo.remove(cor_dado)
 
 
-def sorteia_face_do_dado(cor_dado):
+def sorteia_face_do_dado(fc):
     """
     Sorteia a face de um dado.
 
-    :param cor_dado: cor do dado para sortear a face
+    :param fc: faces do dado
     :return: face do dado
     """
-    return random.choice(dados[cor_dado])
+    return random.choice(fc)
 
+
+#  ***  EXIBIÇÕES  ***  #
 
 def mostra_copo(dados_copo):
     """
@@ -63,7 +141,7 @@ def mostra_copo(dados_copo):
     """
     print('Copo: ', end='')
     for c in dados_copo:
-        print(f'{c} | ', end='')
+        print(f'{pega_cor(c)}{c}{finaliza_cor()} | ', end='')
     print('')
 
 
@@ -71,29 +149,13 @@ def mostra_dado_sorteado(indice, lista_dados_sorteados):
     """
     Mostra o dado sorteado com a sua face.
 
-    :param indice: a ordem do dado sorteado (1, 2 ou 3)
+    :param indice: a ordem do dado sorteado (0, 1 ou 2)
     :param lista_dados_sorteados: a lista dos dados sorteados
-    :return: Exibe a cor e a face do dado sorteado
+    :return: Exibe mensagem com a ordem, a cor e a face do dado sorteado
     """
-    print(f'*** O dado número {indice + 1} é de cor {lista_dados_sorteados[indice][0]:^21} '
-          f'e caiu um {lista_dados_sorteados[indice][1].upper():^10}. ***')
-
-
-def incrementa_contadores(face_dado, lista_contadores):
-    """
-    Incrementa os contadores de cérebro, passo e tiro da rodada.
-
-    :param face_dado: a face do dado
-    :param lista_contadores: a lista dos contadores
-    :return: a lista de contadores atualizada
-    """
-    if face_dado == 'cérebro':
-        lista_contadores['contC'] += 1
-    elif face_dado == 'tiro':
-        lista_contadores['contT'] += 1
-    else:
-        lista_contadores['contP'] += 1
-    return lista_contadores
+    print(f'*** O dado número {indice + 1} '
+          f'é de cor {pega_cor(lista_dados_sorteados.cor)}{lista_dados_sorteados.cor:^10}{finaliza_cor()} '
+          f'e caiu um {lista_dados_sorteados.face.upper():^10}. ***')
 
 
 def mostra_contadores(lista_contadores):
@@ -101,61 +163,155 @@ def mostra_contadores(lista_contadores):
     Exibe os contadores de cérebro, passo e tiro da rodada.
 
     :param lista_contadores: a lista dos contadores
-    :return: Saída dos contadores
+    :return: Mensagem exibindo os valores dos contadores
     """
     print(f'\033[1;35m----- Cérebros: {lista_contadores["contC"]} ----- '
           f'Passos: {lista_contadores["contP"]} ----- '
           f'Tiros: {lista_contadores["contT"]} -----\033[0;0m')
 
 
-def mostra_contagem_cerebros(contagem_cerebros, lista_jogadores):
+def mostra_contagem_cerebros(lista_jogadores):
     """
     Mostra a contagem total de cérebros dos jogadores.
 
-    :param contagem_cerebros: lista do contador de cérebro
     :param lista_jogadores: lista dos jogadores
-    :return: Exibe a contagem de cérebro total
+    :return: Exibe a contagem de cérebro total da lista de jogadores
     """
     print('C o n t a g e m   d e   c é r e b r o s')
     for k in range(len(lista_jogadores)):
-        print(f'{lista_jogadores[k]+" ":.<36} {contagem_cerebros[k]}')
+        print(f'{lista_jogadores[k][0]+" ":.<36} {lista_jogadores[k][1]}')
+        sleep(0.7)
+
+
+def mostra_dados_elegiveis(qtd_passos, qtd_dados_copo):
+    """
+    Exibe os dados que são possíveis serem rolados na próxima rodada
+
+    :param qtd_passos: quantidade passos da rodada
+    :param qtd_dados_copo: quantidade de dados no copo
+    :return: Imprime na tela a quantidade de dados elegíveis para a próxima rodada.
+    """
+    print(f'Dados elegíveis: {qtd_passos + qtd_dados_copo} >>> '
+          f'{qtd_dados_copo} dados no copo + {qtd_passos} passos')
+
+
+def mostra_cerebros_jogador(cerebro_jogador, conta_cerebro):
+    """
+    Mostra os cérebros que o jogador já possui e os cérebros que ele terá se parar seu turno.
+
+    :param cerebro_jogador: quantidade de cérebros do jogador
+    :param conta_cerebro: quantidade de cérebros conquistados no turno até o momento
+    :return: Exibe mensagem com a estimativa de cérebros
+    """
+    print(f'Total de cérebros devorados: de {cerebro_jogador} '
+          f'para {cerebro_jogador+conta_cerebro}')
+
+
+#  ***  VERIFICAÇÕES  ***  #
+
+def quer_continuar(msg):
+    """
+    Bloco de continuação com mensagem definida como parâmetro.
+
+    :param msg: Texto para exibir na interação com o usuário.
+    :return: Verdadeiro ou Falso
+    """
+    condicao = str(input(f'{msg} (S/N) '))
+    while condicao not in 'sSnN':
+        print(f'{pega_cor("vermelho claro")}Opção inválida. '
+              f'Digite S para Sim ou N para Não. {finaliza_cor()}', end='')
+        condicao = str(input(f'{msg} (S/N) '))
+    if condicao in 'nN':
+        return False
+    else:
+        return True
+
+
+def tem_cerebros_suficientes_para_o_final(jdrs):
+    """
+    Verifica se o número de cérebros para finalizar o jogo foi atingido ou ultrapassado.
+
+    :param jdrs: lista dos jogadores
+    :return: Verdadeiro ou falso e o número da maior contagem de cérebros alcançados
+    """
+    aux = list()
+    for x in jdrs:
+        aux.append(x[1])
+    maior_cerebro = max(aux)
+    if maior_cerebro >= CEREBROS_VITORIOSOS:
+        return True, maior_cerebro
+    else:
+        return False, maior_cerebro
+
+
+def verifica_empate(jdrs, cerebro_maximo):
+    """
+    Verifica se houve ou não empate e retorna o ou os vencedores.
+
+    :param jdrs: lista dos jogadores
+    :param cerebro_maximo:
+    :return: Verdadeiro ou Falso e lista dos jogadores que alcançaram a maior pontuação de cérebros.
+    """
+    vencedor = []
+    for j in jdrs:
+        if j[1] == cerebro_maximo:
+            vencedor.append(j)
+    if len(vencedor) > 1:  # Houve empate e terá um novo turno de desempate
+        return True, vencedor
+    else:
+        return False, vencedor
+
+
+def levou_muitos_tiros(conta_tiros, limite_tiros):
+    """
+    Verifica se o jogador recebeu muitos tiros quantos necessário para interromper seu turno.
+
+    :param conta_tiros: quantidade de tiros da rodada
+    :param limite_tiros: limite de tiros para parar o turno
+    :return: Verdadeiro ou Falso para a condição.
+    """
+    if conta_tiros >= limite_tiros:
+        return True
+    else:
+        return False
+
+
+def tem_dados_suficientes(conta_passos, qtd_dados_copo, qtd_dados_sortear):
+    if conta_passos + qtd_dados_copo < qtd_dados_sortear:
+        return False
+    else:
+        return True
+
+
+"""
+
+  P R O G R A M A   P R I N C I P A L
+  
+"""
 
 
 # INICIALIZAÇÃO DE VARIÁVEIS
 TIROS_MATADORES = 3
-CEREBROS_VITORIOSOS = 5
+CEREBROS_VITORIOSOS = 13
 DADOS_PARA_SORTEAR = 3
-dados = {'\033[1;32mverde\033[0;0m': ('cérebro', 'passo', 'cérebro', 'tiro', 'passo', 'cérebro'),
-         '\033[1;33mamarelo\033[0;0m': ('tiro', 'passo', 'cérebro', 'tiro', 'passo', 'cérebro'),
-         '\033[1;31mvermelho\033[0;0m': ('tiro', 'passo', 'tiro', 'cérebro', 'passo', 'tiro')}
+dados_cor = namedtuple('dados_cor', 'verde amarelo vermelho')
+dado = dados_cor(('cérebro', 'passo', 'cérebro', 'tiro', 'passo', 'cérebro'),
+                 ('tiro', 'passo', 'cérebro', 'tiro', 'passo', 'cérebro'),
+                 ('tiro', 'passo', 'tiro', 'cérebro', 'passo', 'tiro'))
 
-# CABEÇALHO. TÍTULO DO JOGO.
+# Cabeçalho. Título do jogo.
 print('')
 print('=' * 60)
 print(f'{"Z  O  M  B  I  E     D  I  C  E":^60}')
 print('=' * 60)
 print('\nVamos começar.')
 
-# JOGADORES - QUANTIDADE E NOMES
-mais_um_jogador = 'S'
-qtd_jogadores = 0
-jogadores = []  # lista que irá conter o nome dos jogadores
-total_cerebros = []  # Contador de cérebros degustados pelos jogadores
-print('Primeiro vamos conhecer os jogadores.\n')
-while mais_um_jogador == 'S':
-    qtd_jogadores += 1
-    total_cerebros.append(0)
-    jogadores.append(input(f'Qual o nome do Jogador número {qtd_jogadores}? '))
-    if qtd_jogadores >= 2:
-        mais_um_jogador = input('Alguém mais vai jogar? (S/N) ').upper()
-        while mais_um_jogador not in 'sSnN':
-            print('\033[1;91mOpção inválida. Digite S para Sim ou N para Não. \033[0;0m', end='')
-            mais_um_jogador = input('Alguém mais vai jogar? (S/N) ').upper()
-print('\n')
+# Define os jogadores da partida.
+jogadores = define_jogadores()
 
 # INÍCIO DO JOGO
-# turno = 0
 while True:
+    # Inicializa o turno e o incrementa.
     if 'turno' not in locals():
         turno = 1
     else:
@@ -165,63 +321,71 @@ while True:
     print('-' * 50)
     print('\n')
 
-    for cont_jog in range(qtd_jogadores):
+    # Inicia o turno para cada jogador na sequência
+    for cont_jog in range(len(jogadores)):
         copo = inicializa_copo()
-        # Contadores auxiliar de cérebros, tiros e passos
-        contadores = {'contC': 0, 'contT': 0, 'contP': 0}
-        # Guardará a cor e face dos dados sorteados
-        dados_sorteados = [['', ''], ['', ''], ['', '']]
 
-        print(f'\033[1;36m{" É a vez de " + jogadores[cont_jog].upper() + " ":~^50}\033[0;0m')
-        print(f'{"Você está com " + str(total_cerebros[cont_jog]) + " cérebros.":^50}\n')
+        # Contadores auxiliares de cérebros, tiros e passos
+        contadores = {'contC': 0, 'contT': 0, 'contP': 0}
+
+        # Guardará a cor e face dos dados sorteados da rodada
+        cor_face = namedtuple('cor_face', 'cor face')
+        dados_sorteados = {'dado1': cor_face('', ''),
+                           'dado2': cor_face('', ''),
+                           'dado3': cor_face('', '')}
+
+        # Exibe o nome do jogador que está jogando.
+        print(f'{pega_cor("cyan")}{" É a vez de " + jogadores[cont_jog][0].upper() + " ":~^50}{finaliza_cor()}')
+        print(f'{"Você está com " + str(jogadores[cont_jog][1]) + " cérebros.":^50}\n')
 
         # INÍCIO DO TURNO
         while True:
-            for i in range(DADOS_PARA_SORTEAR):
+            for i, d in enumerate(dados_sorteados):
                 # Sorteia dados do copo para os dados que não viraram PASSOS na rodada anterior
-                # Se tiver um PASSO na rodada anterior, esse dado será re-rolado.
-                if dados_sorteados[i][1] != 'passo':
-                    dado_sorteado = sorteia_dado_copo(copo)
-                    retira_dado_sorteado_do_copo(dado_sorteado, copo)
-                    dados_sorteados[i][0] = dado_sorteado
+                cor_do_dado = ''
+                if dados_sorteados[d].face != 'passo':
+                    cor_do_dado = sorteia_dado_copo(copo)
+                    retira_dado_sorteado_do_copo(cor_do_dado, copo)
+                else:
+                    # Se tiver um PASSO na rodada anterior, esse dado será re-rolado.
+                    cor_do_dado = dados_sorteados[d].cor
 
-                # Sorteia a face do dado
-                dados_sorteados[i][1] = sorteia_face_do_dado(dados_sorteados[i][0])
+                # Sorteia a face do dado conforme a sua cor
+                face_dado = sorteia_face_do_dado(dado.__getattribute__(cor_do_dado))
 
-                mostra_dado_sorteado(i, dados_sorteados)
+                # Registra e exibe a cor e a face do dado sorteado
+                dados_sorteados[d] = cor_face(cor_do_dado, face_dado)
+                mostra_dado_sorteado(i, dados_sorteados[d])
 
                 # Incrementa os contadores de cérebro, passos e tiros da rodada
-                contadores = incrementa_contadores(dados_sorteados[i][1], contadores)
+                incrementa_contadores(dados_sorteados[d].face, contadores)
 
+            # Exibe contadores, dados que estão no copo, os dados possíveis para serem jogados e contador de cérebros.
             mostra_contadores(contadores)
             mostra_copo(copo)
-
-            print(f'Dados elegíveis: {contadores["contP"] + len(copo)} >>> '
-                  f'{len(copo)} dados no copo + {contadores["contP"]} passos')
-            print(f'Total de cérebros devorados: de {total_cerebros[cont_jog]} '
-                  f'para {total_cerebros[cont_jog]+contadores["contC"]}')
+            mostra_dados_elegiveis(contadores['contP'], len(copo))
+            mostra_cerebros_jogador(jogadores[cont_jog][1], contadores["contC"])
 
             # VERIFICA SE É POSSÍVEL CONTINUAR O TURNO
-            if contadores['contT'] >= TIROS_MATADORES:
+            if levou_muitos_tiros(contadores['contT'], TIROS_MATADORES):
                 # Levou tantos tiros ou mais do que o permitido para continuar
-                print(f'Você recebeu muitos tiros [{contadores["contT"]}]. '
-                      f'Seu turno acabou e você não somou cérebros.\n\n')
-                sleep(1)
+                print(f'{pega_cor("vermelho claro")}Você recebeu muitos tiros [{contadores["contT"]}].{finaliza_cor()} '
+                      f'Seu turno acabou e você não somou cérebros.')
+                dormir(0.3, 5)
+                print('\n')
                 break
-            elif contadores['contP'] + len(copo) < 3:
+            elif not tem_dados_suficientes(contadores['contP'], len(copo), DADOS_PARA_SORTEAR):
                 # Não há mais dados suficientes para jogar novamente
-                print(f'Número de dados insuficientes para uma nova rodada. [{contadores["contP"] + len(copo)}].')
-                print('Cérebros contabilizados e turno finalizado.\n\n')
-                total_cerebros[cont_jog] += contadores['contC']
-                sleep(1)
+                print(f'{pega_cor("vermelho claro")}Número de dados insuficientes para uma nova rodada. '
+                      f'[{contadores["contP"] + len(copo)}].{finaliza_cor()}')
+                print('Cérebros contabilizados e turno finalizado.')
+                jogadores[cont_jog][1] += contadores['contC']
+                dormir(0.3, 5)
+                print('\n')
                 break
             else:
-                jogar_novamente = input('Você quer jogar novamente neste turno? (S/N) ').upper()
-                while jogar_novamente != 'S' and jogar_novamente != 'N':
-                    print('\033[1;91mOpção inválida. Digite S para Sim ou N para Não. \033[0;0m', end='')
-                    jogar_novamente = input('Você quer jogar novamente neste turno? (S/N) ').upper()
-                if jogar_novamente == 'N':  # Não deseja continuar a jogar neste turno
-                    total_cerebros[cont_jog] += contadores['contC']  # incrementa os cérebros deste turno
+                if not quer_continuar('Você quer jogar novamente neste turno?'):
+                    jogadores[cont_jog][1] += contadores['contC']  # incrementa os cérebros deste turno
                     print('\n')
                     break
                 else:  # Quer continuar a lançar os dados neste turno
@@ -229,37 +393,31 @@ while True:
                     print('')
 
     # VERIFICA SE CHEGAMOS AO FIM DO JOGO E SE HOUVE EMPATE
-    maior_cerebro = max(total_cerebros)
-    if maior_cerebro >= CEREBROS_VITORIOSOS:
-        vencedor = []
-        for n in range(len(total_cerebros)):
-            if total_cerebros[n] == maior_cerebro:
-                vencedor.append(n)
-        if len(vencedor) > 1:  # Houve empate e terá um novo turno de desempate
+    cerebros_final = tem_cerebros_suficientes_para_o_final(jogadores)
+    if cerebros_final[0]:
+        empatou = verifica_empate(jogadores, cerebros_final[1])
+        if empatou[0]:
+            mostra_contagem_cerebros(jogadores)
+            print(f'\n{pega_cor("amarelo")}')
+            print('#' * 30)
+            print(f'{"TEMOS UM EMPATE":^30}')
+            print('#' * 30)
+            print(f'{finaliza_cor()}', end='')
+            print(f'Cérebros degustados: {cerebros_final[1]}')
             print('' * 18)
-            print('TEMOS UM EMPATE.')
-            print(f'Cérebros degustados: {total_cerebros}')
-            print('' * 18)
-            jogadores_aux = []
-            total_cerebros_aux = []
             print('\nIrão desempatar:')
-            for n in range(len(vencedor)):
-                print(jogadores[vencedor[n]])
-                jogadores_aux.append(jogadores[vencedor[n]])
-                total_cerebros_aux.append(total_cerebros[vencedor[n]])
-                qtd_jogadores = len(vencedor)
-            jogadores = jogadores_aux
-            total_cerebros = total_cerebros_aux
-            sleep(1)
+            mostra_contagem_cerebros(empatou[1])
+            jogadores = empatou[1]
+            dormir(0.3, 5)
             print('\n')
         else:
             # FIM DO JOGO
             print('Temos o grande nome de ZOMBIE DICE\n')
-            print(f'\033[1;93;100m{" ":60}\033[0;0m')
-            print(f'\033[1;93;100m{jogadores[vencedor[0]].upper():^60}\033[0;0m')
-            print(f'\033[1;93;100m{" ":60}\033[0;0m')
-            print(f'Parabéns {jogadores[vencedor[0]]}. Você devorou {maior_cerebro} cérebros.\n')
-            mostra_contagem_cerebros(total_cerebros, jogadores)
+            print(f'{pega_cor("amarelo claro", "cinza escuro")}{" ":60}{finaliza_cor()}')
+            print(f'{pega_cor("amarelo claro", "cinza escuro")}{empatou[1][0][0]:^60}{finaliza_cor()}')
+            print(f'{pega_cor("amarelo claro", "cinza escuro")}{" ":60}{finaliza_cor()}')
+            print(f'Parabéns {empatou[1][0][0]}. Você devorou {empatou[1][0][1]} cérebros.\n')
+            mostra_contagem_cerebros(jogadores)
             break
 
 print('\n\nFIM DO JOGO')
