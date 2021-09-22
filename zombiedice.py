@@ -468,7 +468,7 @@ while True:
                     contadores.get_contadores_ctp()['contP'] = 0
                     print('')
 
-    # VERIFICA SE CHEGAMOS AO FIM DO JOGO E SE HOUVE EMPATE
+    # VERIFICA SE O JOGO CHEGOU AO FIM OU SE HOUVE EMPATE
     cerebros_final = jogadores.tem_cerebros_suficientes_para_o_final(contadores.get_cerebros_vitoriosos())
     if cerebros_final[0]:
         empatou = jogadores.verifica_empate(cerebros_final[1])
